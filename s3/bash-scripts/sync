@@ -1,1 +1,35 @@
- #!/usr/bin/env bash
+#!/bin/bash
+
+echo "Sync Objects"
+
+#Exit immediatley if any coman dreturns a non-zero status
+set -e
+
+#This is to validate the parameter
+if [ "$#" -eq 0 ]; then
+    echo "Please provide a bucket name."
+    exit 1
+fi
+
+BUCKET_NAME=$1
+
+#Creating random files in local
+# store files temporarily
+OUTPUT_DIR="/tmp/s3-files"
+
+#remove the folder if already available
+rm -r $OUTPUT_DIR
+
+#create a folder
+mkdir -p $OUTPUT_DIR
+
+RAND_NUMBER=$((RANDOM % 6 + 5))
+
+for ((i=1; i<RAND_NUMBER; i++)) do
+    echo "Random number: $RANDOM" > "$OUTPUT_DIR/file-$i.txt"
+    #echo $OUTPUT_DIR/file-$i.txt
+done
+
+tree $OUTPUT_DIR
+
+aws s3 sync $OUTPUT_DIR s3://$BUCKET_NAME

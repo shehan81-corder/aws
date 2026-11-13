@@ -1,1 +1,14 @@
-#!/usr/bin/env bash
+#!/bin/bash
+
+echo "Delete a Bucket"
+
+#This is to validate the parameter
+if [ "$#" -eq 0 ]; then
+    echo "Please provide a parameter."
+    exit 1
+fi
+
+aws_region="ap-southeast-4"
+
+aws s3api delete-bucket \
+--bucket $1

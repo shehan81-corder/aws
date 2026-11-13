@@ -1,0 +1,59 @@
+#!/bin/bash
+
+echo "Delete Objects"
+
+#Enable Error handling -e stop if fails, -u report error, pipefail make a pipeline fail if any commands fail
+set -euo pipefail
+
+#Checking for param 1
+BUCKET_NAME="${1:?Usage: bash s3/bash-scripts/delete-objects BUCKET_NAME}"
+
+ OBJECTS=$(aws s3api list-objects-v2 \
+    --bucket "$BUCKET_NAME" \
+    --max-keys 1000 \
+    --no-paginate \
+    --output json |
+    jq '{Objects: [.Contents[]? | {Key}], Quiet: true}')
+
+
+#List objects and prepare the deletion request, and looping through it
+while true; do
+    OBJECTS=$(aws s3api list-objects-v2 \
+    --bucket "$BUCKET_NAME" \
+    --max-keys 1000 \
+    --no-paginate \
+    --output json |
+    jq '{Objects: [.Contents[]? | {Key}], Quiet: true}')
+
+    #The jq filter converts the listing into the below format needed for deletion:
+    #{
+    #  "Objects": [
+    #    {"Key": "file-1.txt"},
+    #    {"Key": "folder/file-2.txt"}
+    #  ],
+    #  "Quiet": true
+    #}
+
+    #Count the objects
+    COUNT=$(echo "$OBJECTS" | jq '.Objects | length')
+
+    #stop when there are no objects
+    if [ "$COUNT" -eq 0 ]; then
+        break
+    fi
+
+    #delete
+    RESULT=$(aws s3api delete-objects \
+    --bucket "$BUCKET_NAME" \
+    --delete "$OBJECTS" \
+    --output json)
+
+
+    #check for individual deletion failures
+    if echo "$RESULT" | jq -e '.Errors | length > 0' >/dev/null; then
+        echo "$RESULT" | jq '.Errors'
+        exit 1
+    fi
+
+    echo "Deleted $COUNT objects."
+done

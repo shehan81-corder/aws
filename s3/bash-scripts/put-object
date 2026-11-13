@@ -1,0 +1,27 @@
+#!/bin/bash
+
+echo "Put a single Object"
+
+#Exit immediatley if any coman dreturns a non-zero status
+set -e
+
+#This is to validate the parameter
+if [ -z "${1:-}" ]; then
+    echo "Please provide a bucket name."
+    exit 1
+fi
+
+if [ -z "${2:-}" ]; then
+    echo "Please provide a file name."
+    exit 1
+fi
+
+BUCKET_NAME=$1
+FILENAME=$2
+OBJECT_KEY=$(basename "$FILENAME")
+
+
+aws s3api put-object \
+--bucket $BUCKET_NAME \
+--key $OBJECT_KEY \
+--body $FILENAME

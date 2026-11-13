@@ -1,1 +1,23 @@
-#!/usr/bin/env bash
+#!/bin/bash
+
+#echo "Number of parameters: $#"
+#echo "All parameters: $*"
+#echo "First parameter: $1"
+#echo "Second parameter: $2"
+
+echo "Create a Bucket"
+
+#This is to validate the parameter
+if [ "$#" -eq 0 ]; then
+    echo "Please provide a bucket name."
+    exit 1
+fi
+
+aws_region="ap-southeast-4"
+
+aws s3api create-bucket \
+--bucket $1 \
+--region $aws_region \
+--create-bucket-configuration LocationConstraint=$aws_region \
+--query Location \
+--output text

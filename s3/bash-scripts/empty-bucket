@@ -1,0 +1,14 @@
+#!/bin/bash
+
+echo "Delete bucket and it's contents"
+
+#Enable Error handling -e stop if fails, -u report error, pipefail make a pipeline fail if any commands fail
+set -euo pipefail
+
+#Checking for param 1
+BUCKET_NAME="${1:?Usage: bash s3/bash-scripts/delete-objects BUCKET_NAME}"
+
+#trying to delete the bucket empty
+DELETE_BUCKET=$(bash s3/bash-scripts/delete-bucket $BUCKET_NAME)
+
+echo $DELETE_BUCKET;
