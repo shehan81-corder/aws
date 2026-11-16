@@ -1,3 +1,8 @@
+
+# https://docs.aws.amazon.com/boto3/latest/guide/
+# https://docs.aws.amazon.com/boto3/latest/guide/examples.html
+
+
 # python3 -m pip install boto3
 import logging
 import boto3
