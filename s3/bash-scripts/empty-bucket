@@ -9,6 +9,24 @@ set -euo pipefail
 BUCKET_NAME="${1:?Usage: bash s3/bash-scripts/delete-objects BUCKET_NAME}"
 
 #trying to delete the bucket empty
-DELETE_BUCKET=$(bash s3/bash-scripts/delete-bucket $BUCKET_NAME)
+if response=$(bash s3/bash-scripts/delete-bucket $BUCKET_NAME 2>&1); then
+  echo "Bucket deleted."
+else
+  error_code=$?
 
-echo $DELETE_BUCKET;
+    if [[ "$response" == *"(BucketNotEmpty)"* ]]; then
+        echo "Bucket is not empty. Removing its objects..."
+
+        if response=$(bash s3/bash-scripts/delete-objects $BUCKET_NAME 2>&1); then
+            echo "Objects deleted successfully.."
+
+            if response=$(bash s3/bash-scripts/delete-bucket $BUCKET_NAME 2>&1); then
+                echo "Bucket deleted."
+            fi
+        else
+            error_code=$?
+            echo "Could not empty the bucket." >&2
+            exit "$error_code"
+        fi
+    fi
+fi
