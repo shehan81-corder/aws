@@ -1,32 +1,47 @@
+
 #!/bin/bash
 
-echo "Delete bucket and it's contents"
+echo "Delete bucket and its contents"
 
-#Enable Error handling -e stop if fails, -u report error, pipefail make a pipeline fail if any commands fail
-set -euo pipefail
+# Stop on undefined variables
+set -u
 
-#Checking for param 1
-BUCKET_NAME="${1:?Usage: bash s3/bash-scripts/delete-objects BUCKET_NAME}"
+# Check bucket name
+BUCKET_NAME="${1:?Usage: bash delete-bucket-and-objects BUCKET_NAME}"
 
-#trying to delete the bucket empty
-if response=$(bash s3/bash-scripts/delete-bucket $BUCKET_NAME 2>&1); then
-  echo "Bucket deleted."
+# Resolve the directory where this script lives
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# First, try deleting the bucket
+if response=$(bash "$SCRIPT_DIR/delete-bucket" "$BUCKET_NAME" 2>&1); then
+    echo "Bucket deleted."
+
 else
-  error_code=$?
+    error_code=$?
 
     if [[ "$response" == *"(BucketNotEmpty)"* ]]; then
         echo "Bucket is not empty. Removing its objects..."
 
-        if response=$(bash s3/bash-scripts/delete-objects $BUCKET_NAME 2>&1); then
-            echo "Objects deleted successfully.."
+        # Delete all objects
+        if response=$(bash "$SCRIPT_DIR/delete-objects" "$BUCKET_NAME" 2>&1); then
+            echo "Objects deleted successfully."
 
-            if response=$(bash s3/bash-scripts/delete-bucket $BUCKET_NAME 2>&1); then
+            # Try deleting the bucket again
+            if response=$(bash "$SCRIPT_DIR/delete-bucket" "$BUCKET_NAME" 2>&1); then
                 echo "Bucket deleted."
+            else
+                echo "Failed to delete bucket: $response" >&2
+                exit $?
             fi
+
         else
             error_code=$?
-            echo "Could not empty the bucket." >&2
+            echo "Could not empty the bucket: $response" >&2
             exit "$error_code"
         fi
+
+    else
+        echo "Failed to delete bucket: $response" >&2
+        exit "$error_code"
     fi
 fi
